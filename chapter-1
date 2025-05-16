@@ -1,0 +1,81 @@
+创建TCP客户端:
+  import socket
+  
+  target_host = 'www.baidu.com'
+  target_port = 80
+  
+  # 创建socket对象
+  client = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+  
+  # 连接客户端
+  client.connect((target_host,target_port))
+  
+  # 发送一些数据(byte类型)
+  client.send(b'GET / HTTP/1.1\r\nHost: www.baidu.com\r\n\r\n')
+  
+  # 接收一些数据
+  response = client.recv(1024)
+  
+  print(response.decode())
+  client.close()
+
+创建UDP客户端(UDP是无连接协议,不需要建立与服务器的连接):
+  import socket
+  
+  target_host='127.0.0.1'
+  target_port=8888
+  
+  # 创建socket对象
+  client=socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+  
+  # 发送一些数据
+  client.sendto(b'AAABBB',(target_host,target_port))
+  
+  # 接收一些数据
+  response,addr=client.recvfrom(4096)
+  
+  print(response.decode())
+  client.close()
+  其中:recvfrom()函数返回了接收到的数据和数据来源详细信息
+
+创建TCP服务端:
+  import socket
+  import threading
+  
+  IP = '127.0.0.1'
+  PORT = 9999
+  
+  def main():
+      server = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+      # 绑定IP和端口
+      server.bind((IP,PORT))
+      # 开启监听模式(最大监听数量:5)
+      server.listen(5)
+      print(f'[+]Listening on {IP}:{PORT}')
+  
+      while 1:
+          # 接收客户端的socket对象并保存
+          client,addr = server.accept()
+          print(f'[+]Accepted connection from {addr[0]}:{addr[1]}')
+  
+          # 创建新的线程处理客户端的连接
+          client_handler = threading.Thread(target=handle_client,args=(client,))
+          client_handler.start()
+  def handle_client(client_socket):
+      with client_socket as sock:
+          request = sock.recv(1024)
+          print(f'[*]Received: {request.decode('utf-8')}')
+          sock.send(b'ACK')
+  if __name__ == '__main__':
+      main()
+可以使用这个服务端和上面编写的TCP客户端进行一次连接,可以看到服务端的输出:
+  [+]Listening on 127.0.0.1:9999
+  [+]Accepted connection from 127.0.0.1:55966
+  [*]Received: GET / HTTP/1.1
+  Host: 127.0.0.1
+
+
+编写一个取代netcat的程序:
+  netcat简介:
+      Netcat 是一个强大的网络工具，被称为网络界的“瑞士军刀”。它可以使用 TCP 或 UDP 协议在两台计算机之间建立连接，进行数据传输。
+      Netcat 支持多种网络操作，包括端口监听、端口扫描、数据传输、反向 shell、代理等.
